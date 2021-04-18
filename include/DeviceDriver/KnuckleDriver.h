@@ -1,17 +1,16 @@
 #pragma once
 #pragma once
 #include <openvr_driver.h>
-#include <windows.h>
 #include <thread>
 #include <functional>
 #include <memory>
 
-#include "driverlog.h"
-#include "bones.h"
+#include "Bones.h"
 
 #include "Communication/CommunicationManager.h"
 #include "Encode/LegacyEncodingManager.h"
 #include "DeviceDriver/DeviceDriver.h"
+#include "ForceFeedback/FFBIOBuffer.h"
 
 #include "ControllerPose.h"
 #include "DeviceConfiguration.h"
@@ -39,16 +38,16 @@ private:
 	uint32_t m_driverId;
 
 	vr::VRInputComponentHandle_t m_skeletalComponentHandle{};
-	vr::VRInputComponentHandle_t m_inputComponentHandles[23]{};
+    vr::VRBoneTransform_t m_handTransforms[NUM_BONES];
+    vr::VRInputComponentHandle_t m_inputComponentHandles[23]{};
 
 	vr::VRInputComponentHandle_t m_haptic{};
 
-	vr::VRBoneTransform_t m_handTransforms[NUM_BONES];
-
-	uint32_t m_shadowControllerId = vr::k_unTrackedDeviceIndexInvalid;
-
 	VRDeviceConfiguration_t m_configuration;
+
 	std::unique_ptr<ICommunicationManager> m_communicationManager;
+	std::unique_ptr<FFBIOBuffer> m_ffbProvider;
+
 	std::string m_serialNumber;
 
 	std::unique_ptr<ControllerPose> m_controllerPose;

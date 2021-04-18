@@ -55,6 +55,18 @@ void SerialCommunicationManager::Connect() {
 	}
 }
 
+bool SerialCommunicationManager::Write(const char *buffer, unsigned int bufSize) {
+    DWORD bytesSend;
+
+    if (!WriteFile(m_hSerial, (void*) buffer, bufSize, &bytesSend, 0))
+    {
+        ClearCommError(m_hSerial, &m_errors, &m_status);
+        return false;
+    }
+
+    return true;
+}
+
 void SerialCommunicationManager::BeginListener(const std::function<void(VRCommData_t)>& callback) {
 	//DebugDriverLog("Begun listener");
 	m_threadActive = true;

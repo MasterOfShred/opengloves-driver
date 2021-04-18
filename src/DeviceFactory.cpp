@@ -2,6 +2,8 @@
 #include <openvr_driver.h>
 #include <windows.h>
 
+#include "DriverLog.h"
+
 #if defined(_WIN32)
 #define HMD_DLL_EXPORT extern "C" __declspec( dllexport )
 #define HMD_DLL_IMPORT extern "C" __declspec( dllimport )

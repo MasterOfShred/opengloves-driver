@@ -1,4 +1,7 @@
 #include "DeviceDriver/KnuckleDriver.h"
+
+#include "DriverLog.h"
+
 namespace knuckleDevice {
 	const char* c_deviceManufacturer = "Valve";
 }
@@ -158,6 +161,11 @@ vr::EVRInitError KnuckleDeviceDriver::Activate(uint32_t unObjectId) {
 		DebugDriverLog("CreateSkeletonComponent failed.  Error: %s\n", error);
 	}
 
+	m_ffbProvider = std::make_unique<FFBIOBuffer>();
+	m_ffbProvider->Start([&](VRFFBData_t ffbData) {
+        DebugDriverLog("Received data! Thumb: %i", ffbData.thumbCurl);
+	}, m_configuration.role);
+
 	StartDevice();
 
 	m_hasActivated = true;
@@ -236,6 +244,8 @@ void KnuckleDeviceDriver::RunFrame() {
 void KnuckleDeviceDriver::Deactivate() {
 	if (m_hasActivated) {
 		m_communicationManager->Disconnect();
+		m_ffbProvider->Stop();
+
 		m_driverId = vr::k_unTrackedDeviceIndexInvalid;
 	}
 }

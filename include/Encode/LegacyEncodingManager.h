@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Encode/EncodingManager.h>
-#include <windows.h>
 #include <iostream>
 #include <thread>
 #include <atomic>

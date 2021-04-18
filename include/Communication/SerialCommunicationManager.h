@@ -25,6 +25,8 @@ public:
 	bool IsConnected();
 	//close the serial port
 	void Disconnect();
+
+	bool Write(const char* buffer, unsigned int bufSize);
 private:
     void ListenerThread(const std::function<void(VRCommData_t)>& callback);
     bool ReceiveNextPacket(std::string &buff);
