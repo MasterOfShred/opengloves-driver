@@ -37,59 +37,56 @@ constexpr char VRCommDataAlphaEncodingCharacters[] = {
     static_cast<char>(VRCommDataAlphaEncodingCharacter::GesPinch),
     static_cast<char>(VRCommDataAlphaEncodingCharacter::BtnMenu),
     static_cast<char>(VRCommDataAlphaEncodingCharacter::BtnCalib),
-    static_cast<char>(0  // Turns into a null terminated string
-                      )  // Turns into a null terminated string
+    static_cast<char>(0)  // Turns into a null terminated string
 };
-
-static std::string getArgumentSubstring(const std::string& str, const char del) {
-  const size_t start = str.find(del);
-
-  if (start == std::string::npos) return std::string();
-
-  const size_t end =
-      str.find_first_of(VRCommDataAlphaEncodingCharacters, start + 1);  // characters may not necessarily be in order, so end at any letter
-
-  return str.substr(start + 1, end - (start + 1));
-}
-
-static bool argValid(const std::string& str, const char del) {
-  return str.find(del) != std::string::npos;
-}
 
 AlphaEncodingManager::AlphaEncodingManager(const float maxAnalogValue) : EncodingManager(maxAnalogValue) {}
 
 VRInputData AlphaEncodingManager::Decode(const std::string input) {
-  std::array<float, 5> flexion = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f};
-  if (argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinThumb)))
-    flexion[0] = stof(getArgumentSubstring(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinThumb))) / _maxAnalogValue;
-  if (argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinIndex)))
-    flexion[1] = stof(getArgumentSubstring(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinIndex))) / _maxAnalogValue;
-  if (argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinMiddle)))
-    flexion[2] = stof(getArgumentSubstring(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinMiddle))) / _maxAnalogValue;
-  if (argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinRing)))
-    flexion[3] = stof(getArgumentSubstring(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinRing))) / _maxAnalogValue;
-  if (argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinPinky)))
-    flexion[4] = stof(getArgumentSubstring(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::FinPinky))) / _maxAnalogValue;
+  auto getCharPos = [=](const VRCommDataAlphaEncodingCharacter chr, size_t& pos) {
+    pos = input.find(static_cast<char>(chr));
 
-  float joyX = 0;
-  float joyY = 0;
-  if (argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::JoyX)))
-    joyX = 2 * stof(getArgumentSubstring(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::JoyX))) / _maxAnalogValue - 1;
-  if (argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::JoyY)))
-    joyY = 2 * stof(getArgumentSubstring(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::JoyY))) / _maxAnalogValue - 1;
+    return pos != std::string::npos;
+  };
+
+  auto charExists = [=](const VRCommDataAlphaEncodingCharacter chr) {
+    size_t pos;
+
+    return getCharPos(chr, pos);
+  };
+
+  auto scalarExists = [=](const VRCommDataAlphaEncodingCharacter chr, float& value) {
+    size_t charPos;
+
+    if (const bool exists = getCharPos(chr, charPos); !exists) return false;
+
+    // characters may not necessarily be in order, so end at any letter
+    const size_t end = input.find_first_of(VRCommDataAlphaEncodingCharacters, charPos + 1);
+
+    value = stof(input.substr(charPos + 1, end - (charPos + 1)));
+
+    return true;
+  };
+
+  float outValue;
 
   VRInputData inputData(
-      flexion,
-      joyX,
-      joyY,
-      argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::JoyBtn)),
-      argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::BtnTrg)),
-      argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::BtnA)),
-      argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::BtnB)),
-      argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::GesGrab)),
-      argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::GesPinch)),
-      argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::BtnMenu)),
-      argValid(input, static_cast<char>(VRCommDataAlphaEncodingCharacter::BtnCalib)));
+      std::array<float, 5>{
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinThumb, outValue) ? outValue / _maxAnalogValue : -1,
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinIndex, outValue) ? outValue / _maxAnalogValue : -1,
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinMiddle, outValue) ? outValue / _maxAnalogValue : -1,
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinRing, outValue) ? outValue / _maxAnalogValue : -1,
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinPinky, outValue) ? outValue / _maxAnalogValue : -1},
+      scalarExists(VRCommDataAlphaEncodingCharacter::JoyX, outValue) ? 2 * outValue / _maxAnalogValue - 1 : 0,
+      scalarExists(VRCommDataAlphaEncodingCharacter::JoyY, outValue) ? 2 * outValue / _maxAnalogValue - 1 : 0,
+      charExists(VRCommDataAlphaEncodingCharacter::JoyBtn),
+      charExists(VRCommDataAlphaEncodingCharacter::BtnTrg),
+      charExists(VRCommDataAlphaEncodingCharacter::BtnA),
+      charExists(VRCommDataAlphaEncodingCharacter::BtnB),
+      charExists(VRCommDataAlphaEncodingCharacter::GesGrab),
+      charExists(VRCommDataAlphaEncodingCharacter::GesPinch),
+      charExists(VRCommDataAlphaEncodingCharacter::BtnMenu),
+      charExists(VRCommDataAlphaEncodingCharacter::BtnCalib));
 
   return inputData;
 }
@@ -107,5 +104,6 @@ std::string AlphaEncodingManager::Encode(const VRFFBData& input) {
       input.ringCurl,
       static_cast<char>(VRCommDataAlphaEncodingCharacter::FinPinky),
       input.pinkyCurl);
+
   return result;
 }

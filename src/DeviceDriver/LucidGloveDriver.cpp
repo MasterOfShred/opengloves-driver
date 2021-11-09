@@ -2,7 +2,6 @@
 
 static const char* c_deviceControllerType = "lucidgloves";
 static const char* c_deviceModelNumber = "lucidgloves1";
-static const char* c_basePosePath = "/pose/raw";
 static const char* c_inputProfilePath = "{openglove}/input/openglove_profile.json";
 
 LucidGloveDeviceDriver::LucidGloveDeviceDriver(
@@ -13,34 +12,40 @@ LucidGloveDeviceDriver::LucidGloveDeviceDriver(
     : DeviceDriver(std::move(communicationManager), std::move(boneAnimator), serialNumber, configuration), _inputComponentHandles() {}
 
 void LucidGloveDeviceDriver::HandleInput(const VRInputData data) {
-  // clang-format off
-  vr::VRDriverInput()->UpdateScalarComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::JoyX)], data.joyX, 0);
-  vr::VRDriverInput()->UpdateScalarComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::JoyY)], data.joyY, 0);
+  auto updateScalar = [=](LucidGloveDeviceComponentIndex index, const float value) {
+    vr::VRDriverInput()->UpdateScalarComponent(_inputComponentHandles[static_cast<int>(index)], value, 0);
+  };
 
-  vr::VRDriverInput()->UpdateBooleanComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::JoyBtn)], data.joyButton, 0);
-  vr::VRDriverInput()->UpdateBooleanComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::BtnTrg)], data.trgButton, 0);
-  vr::VRDriverInput()->UpdateBooleanComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::BtnA)], data.aButton, 0);
-  vr::VRDriverInput()->UpdateBooleanComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::BtnB)], data.bButton, 0);
+  auto updateBool = [=](LucidGloveDeviceComponentIndex index, const bool value) {
+    vr::VRDriverInput()->UpdateBooleanComponent(_inputComponentHandles[static_cast<int>(index)], value, 0);
+  };
 
-  vr::VRDriverInput()->UpdateBooleanComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::GesGrab)], data.grab, 0);
-  vr::VRDriverInput()->UpdateBooleanComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::GesPinch)], data.pinch, 0);
+  updateScalar(LucidGloveDeviceComponentIndex::JoyX, data.joyX);
+  updateScalar(LucidGloveDeviceComponentIndex::JoyY, data.joyY);
 
-  vr::VRDriverInput()->UpdateScalarComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgThumb)], data.flexion[0], 0);
-  vr::VRDriverInput()->UpdateScalarComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgIndex)], data.flexion[1], 0);
-  vr::VRDriverInput()->UpdateScalarComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgMiddle)], data.flexion[2], 0);
-  vr::VRDriverInput()->UpdateScalarComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgRing)], data.flexion[3], 0);
-  vr::VRDriverInput()->UpdateScalarComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgPinky)], data.flexion[4], 0);
+  updateBool(LucidGloveDeviceComponentIndex::JoyBtn, data.joyButton);
+  updateBool(LucidGloveDeviceComponentIndex::BtnTrg, data.trgButton);
+  updateBool(LucidGloveDeviceComponentIndex::BtnA, data.aButton);
+  updateBool(LucidGloveDeviceComponentIndex::BtnB, data.bButton);
 
-  vr::VRDriverInput()->UpdateBooleanComponent(_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::BtnMenu)], data.menu, 0);
-  // clang-format on
+  updateBool(LucidGloveDeviceComponentIndex::GesGrab, data.grab);
+  updateBool(LucidGloveDeviceComponentIndex::GesPinch, data.pinch);
+
+  updateScalar(LucidGloveDeviceComponentIndex::TrgThumb, data.flexion[0]);
+  updateScalar(LucidGloveDeviceComponentIndex::TrgIndex, data.flexion[1]);
+  updateScalar(LucidGloveDeviceComponentIndex::TrgMiddle, data.flexion[2]);
+  updateScalar(LucidGloveDeviceComponentIndex::TrgRing, data.flexion[3]);
+  updateScalar(LucidGloveDeviceComponentIndex::TrgPinky, data.flexion[4]);
+
+  updateBool(LucidGloveDeviceComponentIndex::BtnMenu, data.menu);
 }
 
 void LucidGloveDeviceDriver::SetupProps(vr::PropertyContainerHandle_t& props) {
   const bool isRightHand = IsRightHand();
 
-  // clang-format off
   vr::VRProperties()->SetInt32Property(props, vr::Prop_ControllerHandSelectionPriority_Int32, 2147483647);
-  vr::VRProperties()->SetStringProperty(props, vr::Prop_InputProfilePath_String, c_inputProfilePath);    // tell OpenVR where to get your driver's Input Profile
+  vr::VRProperties()->SetStringProperty(
+      props, vr::Prop_InputProfilePath_String, c_inputProfilePath);  // tell OpenVR where to get your driver's Input Profile
   vr::VRProperties()->SetInt32Property(props, vr::Prop_ControllerRoleHint_Int32, _configuration.role);  // tells OpenVR what kind of device this is
   vr::VRProperties()->SetStringProperty(props, vr::Prop_SerialNumber_String, GetSerialNumber().c_str());
   vr::VRProperties()->SetStringProperty(props, vr::Prop_ModelNumber_String, c_deviceModelNumber);
@@ -48,29 +53,41 @@ void LucidGloveDeviceDriver::SetupProps(vr::PropertyContainerHandle_t& props) {
   vr::VRProperties()->SetInt32Property(props, vr::Prop_DeviceClass_Int32, vr::TrackedDeviceClass_Controller);
   vr::VRProperties()->SetStringProperty(props, vr::Prop_ControllerType_String, c_deviceControllerType);
 
-  vr::VRDriverInput()->CreateScalarComponent(props, "/input/joystick/x", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::JoyX)], vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
-  vr::VRDriverInput()->CreateScalarComponent(props, "/input/joystick/y", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::JoyY)], vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedTwoSided);
-  vr::VRDriverInput()->CreateBooleanComponent(props, "/input/joystick/click", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::JoyBtn)]);
+  auto createScalar = [=](const char* name, LucidGloveDeviceComponentIndex index, const bool twoSided = false) {
+    vr::VRDriverInput()->CreateScalarComponent(
+        props,
+        name,
+        &_inputComponentHandles[static_cast<int>(index)],
+        vr::VRScalarType_Absolute,
+        twoSided ? vr::VRScalarUnits_NormalizedTwoSided : vr::VRScalarUnits_NormalizedOneSided);
+  };
 
-  vr::VRDriverInput()->CreateBooleanComponent(props, "/input/trigger/click", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::BtnTrg)]);
+  auto createBool = [=](const char* name, LucidGloveDeviceComponentIndex index) {
+    vr::VRDriverInput()->CreateBooleanComponent(props, name, &_inputComponentHandles[static_cast<int>(index)]);
+  };
 
-  vr::VRDriverInput()->CreateBooleanComponent(props, isRightHand ? "/input/A/click" : "/input/system/click", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::BtnA)]);
+  createScalar("/input/joystick/x", LucidGloveDeviceComponentIndex::JoyX, true);
+  createScalar("/input/joystick/y", LucidGloveDeviceComponentIndex::JoyY, true);
+  createBool("/input/joystick/click", LucidGloveDeviceComponentIndex::JoyBtn);
 
-  vr::VRDriverInput()->CreateBooleanComponent(props, "/input/B/click", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::BtnB)]);
+  createBool("/input/trigger/click", LucidGloveDeviceComponentIndex::BtnTrg);
 
-  vr::VRDriverInput()->CreateBooleanComponent(props, "/input/grab/click", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::GesGrab)]);
-  vr::VRDriverInput()->CreateBooleanComponent(props, "/input/pinch/click", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::GesPinch)]);
+  createBool(isRightHand ? "/input/A/click" : "/input/system/click", LucidGloveDeviceComponentIndex::BtnA);
+  createBool("/input/B/click", LucidGloveDeviceComponentIndex::BtnB);
 
-  vr::VRDriverInput()->CreateHapticComponent(props, "output/haptic", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::Haptic)]);
+  createBool("/input/grab/click", LucidGloveDeviceComponentIndex::GesGrab);
+  createBool("/input/pinch/click", LucidGloveDeviceComponentIndex::GesPinch);
 
-  vr::VRDriverInput()->CreateScalarComponent(props, "/input/finger/thumb", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgThumb)], vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedOneSided);
-  vr::VRDriverInput()->CreateScalarComponent(props, "/input/finger/index", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgIndex)], vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedOneSided);
-  vr::VRDriverInput()->CreateScalarComponent(props, "/input/finger/middle", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgMiddle)], vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedOneSided);
-  vr::VRDriverInput()->CreateScalarComponent(props, "/input/finger/ring", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgRing)], vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedOneSided);
-  vr::VRDriverInput()->CreateScalarComponent(props, "/input/finger/pinky", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::TrgPinky)], vr::VRScalarType_Absolute, vr::VRScalarUnits_NormalizedOneSided);
+  vr::VRDriverInput()->CreateHapticComponent(
+      props, "output/haptic", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::Haptic)]);
 
-  vr::VRDriverInput()->CreateBooleanComponent(props, "/input/system/click", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::BtnMenu)]);
-  // clang-format on
+  createScalar("/input/finger/thumb", LucidGloveDeviceComponentIndex::TrgThumb);
+  createScalar("/input/finger/index", LucidGloveDeviceComponentIndex::TrgIndex);
+  createScalar("/input/finger/middle", LucidGloveDeviceComponentIndex::TrgMiddle);
+  createScalar("/input/finger/ring", LucidGloveDeviceComponentIndex::TrgRing);
+  createScalar("/input/finger/pinky", LucidGloveDeviceComponentIndex::TrgPinky);
+
+  createBool("/input/system/click", LucidGloveDeviceComponentIndex::BtnMenu);
 }
 
 void LucidGloveDeviceDriver::StartingDevice() {}
