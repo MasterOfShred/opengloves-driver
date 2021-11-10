@@ -72,13 +72,13 @@ VRInputData AlphaEncodingManager::Decode(const std::string input) {
 
   VRInputData inputData(
       std::array<float, 5>{
-          scalarExists(VRCommDataAlphaEncodingCharacter::FinThumb, outValue) ? outValue / _maxAnalogValue : -1,
-          scalarExists(VRCommDataAlphaEncodingCharacter::FinIndex, outValue) ? outValue / _maxAnalogValue : -1,
-          scalarExists(VRCommDataAlphaEncodingCharacter::FinMiddle, outValue) ? outValue / _maxAnalogValue : -1,
-          scalarExists(VRCommDataAlphaEncodingCharacter::FinRing, outValue) ? outValue / _maxAnalogValue : -1,
-          scalarExists(VRCommDataAlphaEncodingCharacter::FinPinky, outValue) ? outValue / _maxAnalogValue : -1},
-      scalarExists(VRCommDataAlphaEncodingCharacter::JoyX, outValue) ? 2 * outValue / _maxAnalogValue - 1 : 0,
-      scalarExists(VRCommDataAlphaEncodingCharacter::JoyY, outValue) ? 2 * outValue / _maxAnalogValue - 1 : 0,
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinThumb, outValue) ? outValue / maxAnalogValue_ : -1,
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinIndex, outValue) ? outValue / maxAnalogValue_ : -1,
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinMiddle, outValue) ? outValue / maxAnalogValue_ : -1,
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinRing, outValue) ? outValue / maxAnalogValue_ : -1,
+          scalarExists(VRCommDataAlphaEncodingCharacter::FinPinky, outValue) ? outValue / maxAnalogValue_ : -1},
+      scalarExists(VRCommDataAlphaEncodingCharacter::JoyX, outValue) ? 2 * outValue / maxAnalogValue_ - 1 : 0,
+      scalarExists(VRCommDataAlphaEncodingCharacter::JoyY, outValue) ? 2 * outValue / maxAnalogValue_ - 1 : 0,
       charExists(VRCommDataAlphaEncodingCharacter::JoyBtn),
       charExists(VRCommDataAlphaEncodingCharacter::BtnTrg),
       charExists(VRCommDataAlphaEncodingCharacter::BtnA),

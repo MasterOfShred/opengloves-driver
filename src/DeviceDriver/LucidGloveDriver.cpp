@@ -9,15 +9,15 @@ LucidGloveDeviceDriver::LucidGloveDeviceDriver(
     std::shared_ptr<BoneAnimator> boneAnimator,
     const std::string& serialNumber,
     const VRDeviceConfiguration configuration)
-    : DeviceDriver(std::move(communicationManager), std::move(boneAnimator), serialNumber, configuration), _inputComponentHandles() {}
+    : DeviceDriver(std::move(communicationManager), std::move(boneAnimator), serialNumber, configuration), inputComponentHandles_() {}
 
 void LucidGloveDeviceDriver::HandleInput(const VRInputData data) {
   auto updateScalar = [=](LucidGloveDeviceComponentIndex index, const float value) {
-    vr::VRDriverInput()->UpdateScalarComponent(_inputComponentHandles[static_cast<int>(index)], value, 0);
+    vr::VRDriverInput()->UpdateScalarComponent(inputComponentHandles_[static_cast<int>(index)], value, 0);
   };
 
   auto updateBool = [=](LucidGloveDeviceComponentIndex index, const bool value) {
-    vr::VRDriverInput()->UpdateBooleanComponent(_inputComponentHandles[static_cast<int>(index)], value, 0);
+    vr::VRDriverInput()->UpdateBooleanComponent(inputComponentHandles_[static_cast<int>(index)], value, 0);
   };
 
   updateScalar(LucidGloveDeviceComponentIndex::JoyX, data.joyX);
@@ -46,7 +46,7 @@ void LucidGloveDeviceDriver::SetupProps(vr::PropertyContainerHandle_t& props) {
   vr::VRProperties()->SetInt32Property(props, vr::Prop_ControllerHandSelectionPriority_Int32, 2147483647);
   vr::VRProperties()->SetStringProperty(
       props, vr::Prop_InputProfilePath_String, c_inputProfilePath);  // tell OpenVR where to get your driver's Input Profile
-  vr::VRProperties()->SetInt32Property(props, vr::Prop_ControllerRoleHint_Int32, _configuration.role);  // tells OpenVR what kind of device this is
+  vr::VRProperties()->SetInt32Property(props, vr::Prop_ControllerRoleHint_Int32, configuration_.role);  // tells OpenVR what kind of device this is
   vr::VRProperties()->SetStringProperty(props, vr::Prop_SerialNumber_String, GetSerialNumber().c_str());
   vr::VRProperties()->SetStringProperty(props, vr::Prop_ModelNumber_String, c_deviceModelNumber);
   vr::VRProperties()->SetStringProperty(props, vr::Prop_ManufacturerName_String, c_deviceDriverManufacturer);
@@ -57,13 +57,13 @@ void LucidGloveDeviceDriver::SetupProps(vr::PropertyContainerHandle_t& props) {
     vr::VRDriverInput()->CreateScalarComponent(
         props,
         name,
-        &_inputComponentHandles[static_cast<int>(index)],
+        &inputComponentHandles_[static_cast<int>(index)],
         vr::VRScalarType_Absolute,
         twoSided ? vr::VRScalarUnits_NormalizedTwoSided : vr::VRScalarUnits_NormalizedOneSided);
   };
 
   auto createBool = [=](const char* name, LucidGloveDeviceComponentIndex index) {
-    vr::VRDriverInput()->CreateBooleanComponent(props, name, &_inputComponentHandles[static_cast<int>(index)]);
+    vr::VRDriverInput()->CreateBooleanComponent(props, name, &inputComponentHandles_[static_cast<int>(index)]);
   };
 
   createScalar("/input/joystick/x", LucidGloveDeviceComponentIndex::JoyX, true);
@@ -79,7 +79,7 @@ void LucidGloveDeviceDriver::SetupProps(vr::PropertyContainerHandle_t& props) {
   createBool("/input/pinch/click", LucidGloveDeviceComponentIndex::GesPinch);
 
   vr::VRDriverInput()->CreateHapticComponent(
-      props, "output/haptic", &_inputComponentHandles[static_cast<int>(LucidGloveDeviceComponentIndex::Haptic)]);
+      props, "output/haptic", &inputComponentHandles_[static_cast<int>(LucidGloveDeviceComponentIndex::Haptic)]);
 
   createScalar("/input/finger/thumb", LucidGloveDeviceComponentIndex::TrgThumb);
   createScalar("/input/finger/index", LucidGloveDeviceComponentIndex::TrgIndex);
